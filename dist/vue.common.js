@@ -1,5 +1,5 @@
 /*!
- * Vue.js v1.0.11
+ * Vue.js v1.0.12
  * (c) 2015 Evan You
  * Released under the MIT License.
  */
@@ -3270,11 +3270,11 @@ Watcher.prototype.run = function () {
   if (this.active) {
     var value = this.get();
     if (value !== this.value ||
-    // Deep watchers and Array watchers should fire even
+    // Deep watchers and watchers on Object/Arrays should fire even
     // when the value is the same, because the value may
     // have mutated; but only do so if this is a
     // non-shallow update (caused by a vm digest).
-    (isArray(value) || this.deep) && !this.shallow) {
+    (isObject(value) || this.deep) && !this.shallow) {
       // set new value
       var oldValue = this.value;
       this.value = value;
@@ -3520,13 +3520,12 @@ function prefix(prop) {
 var xlinkNS = 'http://www.w3.org/1999/xlink';
 var xlinkRE = /^xlink:/;
 
-// these input element attributes should also set their
-// corresponding properties
-var inputProps = {
-  value: 1,
-  checked: 1,
-  selected: 1
-};
+// check for attributes that prohibit interpolations
+var disallowedInterpAttrRE = /^v-|^:|^@|^(is|transition|transition-mode|debounce|track-by|stagger|enter-stagger|leave-stagger)$/;
+
+// these attributes should also set their corresponding properties
+// because they only affect the initial state of the element
+var attrWithPropsRE = /^(value|checked|selected|muted)$/;
 
 // these attributes should set a hidden property for
 // binding v-model to object values
@@ -3535,9 +3534,6 @@ var modelProps = {
   'true-value': '_trueValue',
   'false-value': '_falseValue'
 };
-
-// check for attributes that prohibit interpolations
-var disallowedInterpAttrRE = /^v-|^:|^@|^(is|transition|transition-mode|debounce|track-by|stagger|enter-stagger|leave-stagger)$/;
 
 var bind = {
 
@@ -3591,7 +3587,7 @@ var bind = {
   handleObject: style.handleObject,
 
   handleSingle: function handleSingle(attr, value) {
-    if (inputProps[attr] && attr in this.el) {
+    if (!this.descriptor.interp && attrWithPropsRE.test(attr) && attr in this.el) {
       this.el[attr] = attr === 'value' ? value == null // IE9 will set input.value to "null" for null...
       ? '' : value : value;
     }
@@ -9429,7 +9425,7 @@ var elementDirectives = {
   partial: partial
 };
 
-Vue.version = '1.0.11';
+Vue.version = '1.0.12';
 
 /**
  * Vue and every constructor that extends Vue has an
