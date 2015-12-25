@@ -1,4 +1,5 @@
-import { warn } from '../../util/index'
+import { warn, setClass } from '../../util/index'
+import { BIND } from '../priorities'
 import vStyle from '../internal/style'
 
 // xlink
@@ -22,7 +23,7 @@ const modelProps = {
 
 export default {
 
-  priority: 850,
+  priority: BIND,
 
   bind () {
     var attr = this.arg
@@ -86,12 +87,14 @@ export default {
   handleObject: vStyle.handleObject,
 
   handleSingle (attr, value) {
+    const el = this.el
+    const interp = this.descriptor.interp
     if (
-      !this.descriptor.interp &&
+      !interp &&
       attrWithPropsRE.test(attr) &&
-      attr in this.el
+      attr in el
     ) {
-      this.el[attr] = attr === 'value'
+      el[attr] = attr === 'value'
         ? value == null // IE9 will set input.value to "null" for null...
           ? ''
           : value
@@ -99,28 +102,35 @@ export default {
     }
     // set model props
     var modelProp = modelProps[attr]
-    if (modelProp) {
-      this.el[modelProp] = value
+    if (!interp && modelProp) {
+      el[modelProp] = value
       // update v-model if present
-      var model = this.el.__v_model
+      var model = el.__v_model
       if (model) {
         model.listener()
       }
     }
     // do not set value attribute for textarea
-    if (attr === 'value' && this.el.tagName === 'TEXTAREA') {
-      this.el.removeAttribute(attr)
+    if (attr === 'value' && el.tagName === 'TEXTAREA') {
+      el.removeAttribute(attr)
       return
     }
     // update attribute
     if (value != null && value !== false) {
-      if (xlinkRE.test(attr)) {
-        this.el.setAttributeNS(xlinkNS, attr, value)
+      if (attr === 'class') {
+        // handle edge case #1960:
+        // class interpolation should not overwrite Vue transition class
+        if (el.__v_trans) {
+          value += ' ' + el.__v_trans.id + '-transition'
+        }
+        setClass(el, value)
+      } else if (xlinkRE.test(attr)) {
+        el.setAttributeNS(xlinkNS, attr, value)
       } else {
-        this.el.setAttribute(attr, value)
+        el.setAttribute(attr, value)
       }
     } else {
-      this.el.removeAttribute(attr)
+      el.removeAttribute(attr)
     }
   }
 }
