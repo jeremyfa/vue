@@ -1,5 +1,5 @@
-var _ = require('../../../../../src/util')
-var def = require('../../../../../src/directives/public/bind')
+var _ = require('src/util')
+var def = require('src/directives/public/bind')
 var xlinkNS = 'http://www.w3.org/1999/xlink'
 
 describe('v-bind', function () {
@@ -9,7 +9,8 @@ describe('v-bind', function () {
     el = document.createElement('div')
     dir = {
       el: el,
-      descriptor: {}
+      descriptor: {},
+      modifiers: {}
     }
     _.extend(dir, def)
   })
@@ -24,6 +25,8 @@ describe('v-bind', function () {
     expect(el.hasAttribute('test')).toBe(false)
     dir.update(false)
     expect(el.hasAttribute('test')).toBe(false)
+    dir.update(true)
+    expect(el.getAttribute('test')).toBe('')
     dir.update(0)
     expect(el.getAttribute('test')).toBe('0')
   })
@@ -67,5 +70,15 @@ describe('v-bind', function () {
     expect(dir.el.getAttributeNS(xlinkNS, 'special')).toBe('ok')
     dir.update(null)
     expect(dir.el.hasAttributeNS(xlinkNS, 'special')).toBe(false)
+  })
+
+  it('camel modifier', function () {
+    dir.modifiers.camel = true
+    var div = document.createElement('div')
+    div.innerHTML = '<svg></svg>'
+    dir.el = div.children[0]
+    dir.arg = 'view-box'
+    dir.update('0 0 1500 1000')
+    expect(dir.el.getAttribute('viewBox')).toBe('0 0 1500 1000')
   })
 })
