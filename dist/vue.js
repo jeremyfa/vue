@@ -1,5 +1,5 @@
 /*!
- * Vue.js v1.0.16
+ * Vue.js v1.0.16-vm
  * (c) 2016 Evan You
  * Released under the MIT License.
  */
@@ -389,6 +389,16 @@
   }
 
   var hasProto = ('__proto__' in {});
+
+  // can we use new Function?
+  var hasNewFunction = (function () {
+    try {
+      var fn = new Function('a', 'return a;');
+      return fn != null;
+    } catch (e) {
+      return false;
+    }
+  })();
 
   // Browser environment sniffing
   var inBrowser = typeof window !== 'undefined' && Object.prototype.toString.call(window) !== '[object Object]';
@@ -1932,6 +1942,22 @@
     }
   }
 
+  var nativeFunction = undefined;
+  if (inBrowser) {
+    nativeFunction = window.Function;
+  } else {
+    nativeFunction = global.Function;
+  }
+
+  // Allow to create new functions from strings
+  // even when native `new Function()` is forbidden
+  var exportedFunction = nativeFunction;
+  if (!hasNewFunction) {
+    exportedFunction = require('loophole').Function;
+  }
+
+  var Function$1 = exportedFunction;
+
   var arrayProto = Array.prototype;
   var arrayMethods = Object.create(arrayProto)
 
@@ -2291,6 +2317,7 @@
   	looseEqual: looseEqual,
   	isArray: isArray,
   	hasProto: hasProto,
+  	hasNewFunction: hasNewFunction,
   	inBrowser: inBrowser,
   	devtools: devtools,
   	isIE9: isIE9,
@@ -2331,7 +2358,8 @@
   	coerceProp: coerceProp,
   	commonTagRE: commonTagRE,
   	reservedTagRE: reservedTagRE,
-  	get warn () { return warn; }
+  	get warn () { return warn; },
+  	Function: Function$1
   });
 
   var uid = 0;
@@ -2891,7 +2919,7 @@
 
   function makeGetterFn(body) {
     try {
-      return new Function('scope', 'return ' + body + ';');
+      return new Function$1('scope', 'return ' + body + ';');
     } catch (e) {
       'development' !== 'production' && warn('Invalid expression. ' + 'Generated function body: ' + body);
     }
@@ -8457,7 +8485,7 @@
      */
 
     function createClass(name) {
-      return new Function('return function ' + classify(name) + ' (options) { this._init(options) }')();
+      return new Function$1('return function ' + classify(name) + ' (options) { this._init(options) }')();
     }
 
     /**
@@ -9557,7 +9585,7 @@
     partial: partial
   };
 
-  Vue.version = '1.0.16';
+  Vue.version = '1.0.16-vm';
 
   /**
    * Vue and every constructor that extends Vue has an
